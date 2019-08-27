@@ -1,1 +1,1 @@
-Uludağ Deep Learning Topluluğu 
+
