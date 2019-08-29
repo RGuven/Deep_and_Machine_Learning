@@ -6,38 +6,43 @@
 """
 
 import cv2
+from matplotlib import pyplot as plt
 import numpy as np
-import win32gui, win32ui, win32con, win32api
 
-def grab_screen(region=None):
+def sketch_transform(image):
+    image_grayscale = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image_grayscale_blurred = cv2.GaussianBlur(image_grayscale, (7,7), 0)
+    image_canny = cv2.Canny(image_grayscale_blurred, 10, 80)
+    _, mask = image_canny_inverted = cv2.threshold(image_canny, 30, 255, cv2.THRESH_BINARY_INV)
+    return mask
+cam_capture = cv2.VideoCapture(0)
+cv2.destroyAllWindows()
 
-    hwin = win32gui.GetDesktopWindow()
-
-    if region:
-            left,top,x2,y2 = region
-            width = x2 - left + 1
-            height = y2 - top + 1
-    else:
-        width = win32api.GetSystemMetrics(win32con.SM_CXVIRTUALSCREEN)
-        height = win32api.GetSystemMetrics(win32con.SM_CYVIRTUALSCREEN)
-        left = win32api.GetSystemMetrics(win32con.SM_XVIRTUALSCREEN)
-        top = win32api.GetSystemMetrics(win32con.SM_YVIRTUALSCREEN)
-
-    hwindc = win32gui.GetWindowDC(hwin)
-    srcdc = win32ui.CreateDCFromHandle(hwindc)
-    memdc = srcdc.CreateCompatibleDC()
-    bmp = win32ui.CreateBitmap()
-    bmp.CreateCompatibleBitmap(srcdc, width, height)
-    memdc.SelectObject(bmp)
-    memdc.BitBlt((0, 0), (width, height), srcdc, (left, top), win32con.SRCCOPY)
+while True:
+    _, im0 = cam_capture.read()
+    showCrosshair = False
+    fromCenter = False
+    r = cv2.selectROI("Image", im0, fromCenter, showCrosshair)
+    break
     
-    signedIntsArray = bmp.GetBitmapBits(True)
-    img = np.fromstring(signedIntsArray, dtype='uint8')
-    img.shape = (height,width,4)
-
-    srcdc.DeleteDC()
-    memdc.DeleteDC()
-    win32gui.ReleaseDC(hwin, hwindc)
-    win32gui.DeleteObject(bmp.GetHandle())
-
-    return cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
+while True:   
+    _, image_frame = cam_capture.read()
+    
+    rect_img = image_frame[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])]
+    
+    sketcher_rect = rect_img
+    sketcher_rect = sketch_transform(sketcher_rect)
+    
+    #Orijinal Rgb'ye döndür
+    sketcher_rect_rgb = cv2.cvtColor(sketcher_rect, cv2.COLOR_GRAY2RGB)
+    
+    #Belirlediğin alana rgb resmi yerleştir.
+    image_frame[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])] = sketcher_rect_rgb
+    
+    cv2.imshow("Sketcher ROI", image_frame)
+    
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+        
+cam_capture.release()
+cv2.destroyAllWindows()
