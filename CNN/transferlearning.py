@@ -29,7 +29,7 @@ x=Dense(1024,activation="relu")(x)
 x=Dropout(0.2)(x)
 x=Dense(1024,activation="relu")(x)
 x=Dropout(0.2)(x)
-tahmin=Dese(2,activation='softmax')(x)
+tahmin=Dense(2,activation='softmax')(x)
 
 
 model=Model(inputs=vggmodel.input,outputs=tahmin)
