@@ -87,18 +87,12 @@ if __name__ == "__main__":
 
         total_reward = 0
         for time in range(1000):
-            
             action = agent.act(state)
-            
             next_state, reward, done, _ = env.step(action)
             next_state = np.reshape(next_state, [1, state_number])
-            
             agent.remember(state, action, reward, next_state, done)
-            
             state = next_state
-
             agent.replay(batch_size)
-
             total_reward += reward
             
             if done:
